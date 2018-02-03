@@ -1,5 +1,5 @@
 {
-  "contract_name": "SudCoin",
+  "contract_name": "MetaCoin",
   "abi": [
     {
       "constant": false,

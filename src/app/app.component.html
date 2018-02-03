@@ -1,4 +1,26 @@
-<div class="mat-app-background basic-container">
-  Dialog should be shown
-</div>
-
+<mat-toolbar color="primary">
+   StudentChain
+</mat-toolbar>
+  <div class="basic-container">
+      <div layout-fill *ngIf="status" layout="column" layout-align="center none">
+          <div layout="row" layout-align="center none">
+            <mat-card >
+                {{ status }}
+            </mat-card>
+          </div>
+      </div>
+      <mat-card>
+        <p>
+            Your Balance = {{ balance }} <br/>
+            Your Eth Address = {{ account }}<br/>            
+        </p>
+      </mat-card>      
+    <h2>File Tree</h2>
+    <ul>
+      <li *ngFor="let file of files">
+        {{file.name}}
+        <button (click)="openFileDialog(file)">Edit</button>
+      </li>
+      <button (click)="openFileDialog()">Add file</button>
+    </ul>
+  </div>

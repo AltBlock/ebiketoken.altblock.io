@@ -1,8 +1,9 @@
-<form [formGroup]="form">
+<form>
     <h1 mat-dialog-title>Message</h1>
     <mat-dialog-content>
+      {{ message }}
     </mat-dialog-content>
     <mat-dialog-actions>
-      <button mat-button type="button" mat-dialog-close>Ok</button>
+      <button mat-button type="button" (click)="close()" >Ok</button>
     </mat-dialog-actions>
-  </form>
+</form>
