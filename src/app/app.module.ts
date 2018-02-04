@@ -13,14 +13,16 @@ import {
 } from '@angular/material';
 
 import { AppComponent } from './app.component';
-import {FileNameDialogComponent} from './shared-module/file-name-dialog-component';
+import { FileNameDialogComponent } from './shared-module/file-name-dialog-component';
 import { MessageDialogComponent } from './shared-module/messagedialog/message.dialog';
+import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MessageDialogComponent,
-    FileNameDialogComponent
+    FileNameDialogComponent,
+    AirDropDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -44,7 +46,8 @@ import { MessageDialogComponent } from './shared-module/messagedialog/message.di
   ],
   entryComponents: [
     MessageDialogComponent,
-    FileNameDialogComponent
+    FileNameDialogComponent,
+    AirDropDialogComponent
   ],
   bootstrap: [AppComponent]
 })

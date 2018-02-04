@@ -1,7 +1,8 @@
 import { HostListener, Component, NgZone, OnInit, AfterViewInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { MessageDialogComponent } from './shared-module/messagedialog/message.dialog';
-import {FileNameDialogComponent} from './shared-module/file-name-dialog-component';
+import { FileNameDialogComponent } from './shared-module/file-name-dialog-component';
+import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component';
 import { filter } from 'rxjs/operators';
 import { AfterViewChecked } from '@angular/core/src/metadata/lifecycle_hooks';
 
@@ -11,7 +12,8 @@ declare var window: any;
 const Web3 = require('web3');
 const contract = require('truffle-contract');
 
-const coinArtifacts = require('../../build/contracts/Migrations.json');
+const crowdsaleArtifacts = require('../../build/contracts/StudentChainCrowdsale.json');
+const chainArtifacts = require('../../build/contracts/StudentChain.json');
 
 @Component({
   selector: 'app-root',
@@ -19,18 +21,23 @@ const coinArtifacts = require('../../build/contracts/Migrations.json');
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
-  coinInstance: any;
+  crowsaleInstance: any;
+  walletInstance: any;
   title = 'app';
-  Coin = contract(coinArtifacts);
+  Crowdsale = contract(crowdsaleArtifacts);
+  StudentChain = contract(chainArtifacts);
 
   account: any;
   accounts: any = 0;
+  defaultamount: any;
+  crowdsaleAccount: any;
   web3: any;
   balance: number = 0;
   status: string;
 
   messageDialogRef: MatDialogRef<MessageDialogComponent>;
   fileNameDialogRef: MatDialogRef<FileNameDialogComponent>;
+  airDropDialogRef: MatDialogRef<AirDropDialogComponent>;
 
   constructor(private _ngZone: NgZone, private dialog: MatDialog){
 
@@ -44,9 +51,11 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
   @HostListener('window:load')
   windowLoaded() {
     // Bootstrap the SudCoin abstraction for Use.
-    this.Coin.setProvider(this.web3.currentProvider);
+    this.Crowdsale.setProvider(this.web3.currentProvider);
+    this.StudentChain.setProvider(this.web3.currentProvider);
     var err = false;
     var notconnected = false;
+    //console.log(this.web3.eth.accounts[1]);
     // Get the initial account balance so it can be displayed
     this.web3.eth.getAccounts((err, accs) => {
           if (err != null){
@@ -70,7 +79,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
             }else if(notconnected) {
               this.openMessageDialog('You are not connected to an Ethereum client. Your can still browse the data, but you will not be able to perform transactions.');
             }else{
-              console.log('connected');
+              console.log('connected '+this.account);
               this.refreshBalance();
             }
             
@@ -78,36 +87,72 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
     });    
   }
 
+  notifyError(message){
+    this.openMessageDialog(message.substring(0,message.indexOf(' at')));
+  }
+
+  airDropToken(){
+    this.airDropDialogRef = this.dialog.open(AirDropDialogComponent, {
+      data: {
+        amount: this.defaultamount ? this.defaultamount : ''
+      }
+    });
+
+    this.airDropDialogRef.afterClosed().pipe(
+      filter(amount => amount)
+    ).subscribe(amount => {
+      this.crowsaleInstance
+          .sendTransaction({ from: this.account, value: this.web3.toWei(amount, "ether")})
+          .then((receipt) => {
+            console.log(receipt);
+            var message = 'Your transaction successful.  '
+            + '  TxId: '+receipt.tx 
+
+            + '  Block: '+receipt.receipt.blockNumber;
+            this.openMessageDialog(message);
+          }).catch((err) => {                                
+            console.log(err.message);
+            this.notifyError(err.message);
+          })
+      this.refreshBalance();
+    });    
+  }
+
+  assignInstance(instance:any){
+    this.crowsaleInstance = instance;
+    console.log(instance);   
+    //GustavoCoinCrowdsale.deployed().then(inst => inst.sendTransaction({ from: account1, value: web3.toWei(5, "ether")}))    
+    return instance.token().then(
+      function(addr){
+        return addr;
+      }
+    );
+  }
+
+  assignWalletInstance(addr){
+    this.walletInstance = this.StudentChain.at(addr);    
+    return this.walletInstance;
+  }
+  
+  walletBalance(walletInstance){
+    walletInstance.balanceOf(this.account).then(balance => {      
+      console.log('Balance: '+balance.toString(10));
+      this.balance = balance;
+      return balance.toString(10);
+    });
+  }
+
   refreshBalance = () => {
     let meta;
-    this.Coin
-      .deployed()
-      .then(instance => {        
-        meta = instance;
-        //console.log(meta);
-        /*
-        console.log(meta.getBalance.call(this.account, {
-          from: this.account
-        }));*/
-        //console.log(meta.getBalance(this.account));
-        return meta.getBalance.call(this.account, {from: this.account});
-        //alert('ddd');
-        //return 2;
-        /*
-        return meta.getBalance.call(this.account, {
-          from: this.account
-        });*/
-        
-      })
-      .then(value => {
-        
-        this.balance = value;
-        
-      })
-      .catch((e) => {
-        //console.log(e);
-        this.setStatus('Error getting balance; see log.');
-      });
+    console.log('refreshing balance');
+    let that = this;
+    this.Crowdsale.deployed().then(
+      (instance) => this.assignInstance(instance)
+    ).then(
+      (addr) => this.assignWalletInstance(addr)
+    ).then(
+      (walletInstance) => this.walletBalance(walletInstance)
+    );
   };
 
   setStatus = message => {
@@ -121,7 +166,6 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
   }
 
   ngAfterViewInit(){
-    console.log('dddd');
     this.checkAndInstantiateWeb3();
     //this.onReady();
   }
@@ -191,7 +235,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
 
   onReady = () => {
     // Bootstrap the SudCoin abstraction for Use.
-    this.Coin.setProvider(this.web3.currentProvider);
+    this.Crowdsale.setProvider(this.web3.currentProvider);
 
     // Get the initial account balance so it can be displayed
     this.web3.eth.getAccounts((err, accs) => {

@@ -10,11 +10,18 @@
           </div>
       </div>
       <mat-card>
-        <p>
+        <mat-card-title>
+          Your STC Token
+        </mat-card-title>
+        <mat-card-content>
             Your Balance = {{ balance }} <br/>
             Your Eth Address = {{ account }}<br/>            
-        </p>
-      </mat-card>      
+        </mat-card-content>
+      </mat-card>   
+      <br/>
+      <div class="button-row">
+        <button mat-raised-button color="primary"  (click)="airDropToken()">AirDrop Token</button>
+      </div>         
     <h2>File Tree</h2>
     <ul>
       <li *ngFor="let file of files">
