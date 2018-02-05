@@ -33,6 +33,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
   crowdsaleAccount: any;
   web3: any;
   balance: number = 0;
+  ethBalance: number;
   status: string;
 
   messageDialogRef: MatDialogRef<MessageDialogComponent>;
@@ -73,6 +74,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
           this._ngZone.run(() => {
             // Initial loading of UI
             // Load balances or whatever
+            this.ethBalance = this.web3.eth.getBalance(this.account); 
             //doublecheck if error or not conected 
             if (err){
               this.openMessageDialog('There was an error fetching your accounts. Error connecting to Blockchain.');
@@ -88,7 +90,10 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
   }
 
   notifyError(message){
+    if (message.indexOf(' at')>0)
     this.openMessageDialog(message.substring(0,message.indexOf(' at')));
+    else
+    this.openMessageDialog(message);
   }
 
   airDropToken(){
@@ -100,20 +105,36 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
 
     this.airDropDialogRef.afterClosed().pipe(
       filter(amount => amount)
-    ).subscribe(amount => {
-      this.crowsaleInstance
+    ).subscribe(amount => 
+      {
+        this.Crowdsale.deployed().then(inst => {
+            inst.sendTransaction({ from: this.account, value: this.web3.toWei(amount, "ether")})
+            .then((receipt) => {
+              console.log(receipt);
+              var message = 'Your transaction successful.  '
+              + '  TxId: '+receipt.tx 
+              + '  Block: '+receipt.receipt.blockNumber;
+              this.openMessageDialog(message);
+            }).catch((err) => {                                
+              console.log(err.message);
+              this.notifyError(err.message);
+            })
+          }
+        );
+        /*
+          this.crowsaleInstance
           .sendTransaction({ from: this.account, value: this.web3.toWei(amount, "ether")})
           .then((receipt) => {
             console.log(receipt);
             var message = 'Your transaction successful.  '
             + '  TxId: '+receipt.tx 
-
             + '  Block: '+receipt.receipt.blockNumber;
             this.openMessageDialog(message);
           }).catch((err) => {                                
             console.log(err.message);
             this.notifyError(err.message);
-          })
+          });
+          */
       this.refreshBalance();
     });    
   }
@@ -145,6 +166,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
   refreshBalance = () => {
     let meta;
     console.log('refreshing balance');
+    this.ethBalance = this.web3.eth.getBalance(this.account); 
     let that = this;
     this.Crowdsale.deployed().then(
       (instance) => this.assignInstance(instance)
