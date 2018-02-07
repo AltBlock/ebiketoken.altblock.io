@@ -14,21 +14,26 @@
           Your STC Token
         </mat-card-title>
         <mat-card-content>
-            Your ETH Balance = {{ ethBalance }}<br/>
+            Your ETH Balance = {{ ethBalance }} ETH<br/>
             Your STC Balance = {{ balance }} <br/>
-            Your Eth Address = {{ account }}<br/>            
+            Your Eth Address = {{ account }}<br/>
         </mat-card-content>
-      </mat-card>   
-      <br/>
-      <div class="button-row">
-        <button mat-raised-button color="primary"  (click)="airDropToken()">AirDrop Token</button>
-      </div>         
-    <h2>File Tree</h2>
-    <ul>
-      <li *ngFor="let file of files">
-        {{file.name}}
-        <button (click)="openFileDialog(file)">Edit</button>
-      </li>
-      <button (click)="openFileDialog()">Add file</button>
-    </ul>
+      </mat-card>
+      <mat-card>
+        <mat-card-title>
+          STC Contract
+        </mat-card-title>
+        <mat-card-content>
+            Contract Address = {{ contractAddress }}<br/>
+            STC token = {{ contractSTCBalance }} <br/>
+            Rate = {{ rate }}
+            Total Supply = {{ totalSupply }}
+        </mat-card-content>
+        <br/>
+        <div class="button-row">
+          <button mat-raised-button color="primary"  (click)="airDropToken()">Buy STC Token</button>
+        </div>
+      </mat-card>
+      <mat-divider></mat-divider>
+
   </div>

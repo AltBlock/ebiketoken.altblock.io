@@ -9,11 +9,12 @@ import {
   MatFormFieldModule,
   MatToolbarModule,
   MatInputModule,
-  MatCardModule
+  MatCardModule,
+  MatDividerModule
 } from '@angular/material';
 
 import { AppComponent } from './app.component';
-import { FileNameDialogComponent } from './shared-module/file-name-dialog-component';
+
 import { MessageDialogComponent } from './shared-module/messagedialog/message.dialog';
 import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component';
 
@@ -21,7 +22,7 @@ import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component
   declarations: [
     AppComponent,
     MessageDialogComponent,
-    FileNameDialogComponent,
+
     AirDropDialogComponent
   ],
   imports: [
@@ -33,20 +34,21 @@ import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component
     MatFormFieldModule,
     MatInputModule,
     MatCardModule,
+    MatDividerModule,
     FormsModule,
-    ReactiveFormsModule,    
+    ReactiveFormsModule,
     BrowserAnimationsModule
   ],
   exports: [
     MatButtonModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+
   ],
   providers: [
 
   ],
   entryComponents: [
     MessageDialogComponent,
-    FileNameDialogComponent,
     AirDropDialogComponent
   ],
   bootstrap: [AppComponent]

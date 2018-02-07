@@ -1,7 +1,7 @@
 import { HostListener, Component, NgZone, OnInit, AfterViewInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { MessageDialogComponent } from './shared-module/messagedialog/message.dialog';
-import { FileNameDialogComponent } from './shared-module/file-name-dialog-component';
+
 import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component';
 import { filter } from 'rxjs/operators';
 import { AfterViewChecked } from '@angular/core/src/metadata/lifecycle_hooks';
@@ -20,24 +20,41 @@ const chainArtifacts = require('../../build/contracts/StudentChain.json');
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
+export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
   crowsaleInstance: any;
-  walletInstance: any;
-  title = 'app';
+  studentChainInstance: any;
+
   Crowdsale = contract(crowdsaleArtifacts);
   StudentChain = contract(chainArtifacts);
 
+  err:boolean = false;
+  notconnected:boolean = false;
+  network:string = 'local';
+
+  walletInstance: any;
+
   account: any;
-  accounts: any = 0;
+
+  // balance check pending after transaction
+  // usually network is slow so need to run a timeout loop to constantly check the balance
+  balancePending:boolean = false;
+  intervalCheckId:any;
+
+  // default participation amount
   defaultamount: any;
+
   crowdsaleAccount: any;
   web3: any;
   balance: number = 0;
   ethBalance: number;
   status: string;
+  contractSTCBalance: number;
+  contractAddress: string;
+  rate: string;
+  totalSupply: number;
 
   messageDialogRef: MatDialogRef<MessageDialogComponent>;
-  fileNameDialogRef: MatDialogRef<FileNameDialogComponent>;
+
   airDropDialogRef: MatDialogRef<AirDropDialogComponent>;
 
   constructor(private _ngZone: NgZone, private dialog: MatDialog){
@@ -51,52 +68,23 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
 
   @HostListener('window:load')
   windowLoaded() {
+
     // Bootstrap the SudCoin abstraction for Use.
     this.Crowdsale.setProvider(this.web3.currentProvider);
     this.StudentChain.setProvider(this.web3.currentProvider);
-    var err = false;
-    var notconnected = false;
-    //console.log(this.web3.eth.accounts[1]);
-    // Get the initial account balance so it can be displayed
-    this.web3.eth.getAccounts((err, accs) => {
-          if (err != null){
-            err = true;
-          } else if ((typeof accs != undefined) && accs.length === 0){
-            err = true;
-          }
-          else {
-            console.log(accs);
-            this.accounts = accs;
-            this.account = this.accounts[0];            
-          }
-          // This is run from window:load and ZoneJS is nto aware of it we
-          // need to use _ngZone.run() so that the UI updates on promise resolution
-          this._ngZone.run(() => {
-            // Initial loading of UI
-            // Load balances or whatever
-            this.ethBalance = this.web3.eth.getBalance(this.account); 
-            //doublecheck if error or not conected 
-            if (err){
-              this.openMessageDialog('There was an error fetching your accounts. Error connecting to Blockchain.');
-            }else if(notconnected) {
-              this.openMessageDialog('You are not connected to an Ethereum client. Your can still browse the data, but you will not be able to perform transactions.');
-            }else{
-              console.log('connected '+this.account);
-              this.refreshBalance();
-            }
-            
-          });
-    });    
+
+    this.onReady();
   }
 
-  notifyError(message){
-    if (message.indexOf(' at')>0)
-    this.openMessageDialog(message.substring(0,message.indexOf(' at')));
-    else
-    this.openMessageDialog(message);
+  notifyError(message) {
+    if (message.indexOf(' at') > 0) {
+    this.openMessageDialog(message.substring(0, message.indexOf(' at')));
+    } else {
+      this.openMessageDialog(message);
+    }
   }
 
-  airDropToken(){
+  airDropToken() {
     this.airDropDialogRef = this.dialog.open(AirDropDialogComponent, {
       data: {
         amount: this.defaultamount ? this.defaultamount : ''
@@ -105,98 +93,178 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
 
     this.airDropDialogRef.afterClosed().pipe(
       filter(amount => amount)
-    ).subscribe(amount => 
-      {
+    ).subscribe(
+      amount => {
         this.Crowdsale.deployed().then(inst => {
-            inst.sendTransaction({ from: this.account, value: this.web3.toWei(amount, "ether")})
+            inst.sendTransaction({ from: this.account.toString(), value: this.web3.toWei(amount, "ether")})
             .then((receipt) => {
               console.log(receipt);
-              var message = 'Your transaction successful.  '
-              + '  TxId: '+receipt.tx 
-              + '  Block: '+receipt.receipt.blockNumber;
+              const message = 'Your transaction successful.  '
+              + '  TxId: ' + receipt.tx
+              + '  Block: ' + receipt.receipt.blockNumber;
               this.openMessageDialog(message);
-            }).catch((err) => {                                
+              // flag to check balance update on UI can be slight delay due to blockchain network latency
+              this.balancePending = true;
+              this.intervalCheckId = setInterval(() => { this.refreshBalance(); console.log('checking again'); }, 1000);
+              // this.refreshBalance();
+            }).catch((err) => {
               console.log(err.message);
               this.notifyError(err.message);
-            })
+            });
           }
         );
-        /*
-          this.crowsaleInstance
-          .sendTransaction({ from: this.account, value: this.web3.toWei(amount, "ether")})
-          .then((receipt) => {
-            console.log(receipt);
-            var message = 'Your transaction successful.  '
-            + '  TxId: '+receipt.tx 
-            + '  Block: '+receipt.receipt.blockNumber;
-            this.openMessageDialog(message);
-          }).catch((err) => {                                
-            console.log(err.message);
-            this.notifyError(err.message);
-          });
-          */
-      this.refreshBalance();
-    });    
-  }
 
-  assignInstance(instance:any){
-    this.crowsaleInstance = instance;
-    console.log(instance);   
-    //GustavoCoinCrowdsale.deployed().then(inst => inst.sendTransaction({ from: account1, value: web3.toWei(5, "ether")}))    
-    return instance.token().then(
-      function(addr){
-        return addr;
-      }
-    );
-  }
-
-  assignWalletInstance(addr){
-    this.walletInstance = this.StudentChain.at(addr);    
-    return this.walletInstance;
-  }
-  
-  walletBalance(walletInstance){
-    walletInstance.balanceOf(this.account).then(balance => {      
-      console.log('Balance: '+balance.toString(10));
-      this.balance = balance;
-      return balance.toString(10);
     });
   }
 
-  refreshBalance = () => {
-    let meta;
+/**
+ * Assign Contract Address for STC
+ * @param addr
+ */
+assignContractAddress(addr) {
+  this.contractAddress = addr;
+  return addr;
+}
+
+assignSupply(supply) {
+  this.totalSupply = supply;
+}
+/**
+ * Get contract STC Balance
+ */
+getContractSTCBalance() {
+  // this.studentChainInstance = this.StudentChain.at(this.contractAddress);
+  // this.contractSTCBalance = this.studentChainInstance.balanceOf(this.contractAddress).then(balance => balance.toString(10));
+
+   const studentChainInstance = this.StudentChain.at(this.contractAddress);
+   studentChainInstance.balanceOf(this.account).then(balance => {
+    console.log('Balance: ' + balance.toString(10));
+    this.contractSTCBalance = balance;
+    return balance.toString(10);
+   });
+
+   studentChainInstance.totalSupply().then((supply) => this.assignSupply(supply));
+
+}
+
+/**
+ * Assign Crowsale contract Instance for STC
+ * @param instance
+ */
+assignCrowSaleInstance(instance:any) {
+    this.crowsaleInstance = instance;
+    console.log(instance);
+    // StudentChainCrowdsale.deployed().then(inst => inst.sendTransaction({ from: account1, value: web3.toWei(5, "ether")}))
+   return instance.token().then(
+      (addr) => this.assignContractAddress(addr)
+   );
+}
+
+/**
+ * Assign StudentChain Token Wallet Instance
+ * @param addr
+ */
+assignStudentChainInstance(addr) {
+    this.studentChainInstance = this.StudentChain.at(addr);
+    return this.studentChainInstance;
+}
+
+/**
+ * Get STC Balance of current wallet
+ * @param STCInstance
+ */
+STCBalance(STCInstance) {
+  this.getContractSTCBalance();
+  // get current account STC Balance
+  STCInstance.balanceOf(this.account).then(balance => {
+     console.log('Balance: ' + balance.toString(10));
+     console.log(this.web3.fromWei(balance,'ether') +' ==? '+ this.balance);
+     // check if the balance is unchanged
+     if (this.web3.fromWei(balance,'ether') == this.balance) {
+       console.log('SAME BALANCE !!');
+       this.balancePending = true;
+     } else {
+      this.balancePending = false;
+     }
+     this.balance = this.web3.fromWei(balance, 'ether');
+     return this.web3.fromWei(balance, 'ether');
+   });
+}
+
+/**
+ * Assign Eth Balance in Eth readable format from Wei
+ * @param bal
+ * @param err
+ */
+assignEthBalance(bal, err) {
+  if (bal != null) {
+    // console.log(bal.plus(21).toString(10));
+     // check if the balance is unchanged
+    if (this.web3.fromWei(bal,'ether') == this.ethBalance) {
+      this.balancePending = true;
+      console.log('SAME BALANCE !!');
+    } else {
+      this.balancePending = false;
+     }
+    // response is returned in BigNumber BigNumber { s: 1, e: 0, c: [ 0 ] }
+    this.ethBalance = this.web3.fromWei(bal, 'ether');
+  }
+}
+
+/**
+ * Get eth balance in Ether from Wei
+ * @param address
+ */
+getEthBalance(address) {
+  console.log('getting balance of ' + address);
+  this.web3.eth.getBalance(address.toString(), (err, bal) => this.assignEthBalance(bal, err));
+}
+
+/**
+ * Refresh All Balances
+ *
+ */
+refreshBalance = () => {
+
     console.log('refreshing balance');
-    this.ethBalance = this.web3.eth.getBalance(this.account); 
-    let that = this;
+
+    // getting buyers ether balance
+    this.getEthBalance(this.account);
+
+    const that = this;
     this.Crowdsale.deployed().then(
-      (instance) => this.assignInstance(instance)
+      (instance) => this.assignCrowSaleInstance(instance)
     ).then(
-      (addr) => this.assignWalletInstance(addr)
+      (addr) => this.assignStudentChainInstance(addr)
     ).then(
-      (walletInstance) => this.walletBalance(walletInstance)
+      (STCInstance) => this.STCBalance(STCInstance)
     );
-  };
+
+    if (this.balancePending === false) {
+        clearInterval(this.intervalCheckId);
+    }
+}
 
   setStatus = message => {
     this.status = message;
-  };
+  }
 
   ngOnInit() {
-    //this.checkAndInstantiateWeb3();
-    //this.onReady();
+    // this.checkAndInstantiateWeb3();
+    // this.onReady();
     console.log('window init');
   }
 
-  ngAfterViewInit(){
+  ngAfterViewInit() {
     this.checkAndInstantiateWeb3();
-    //this.onReady();
+    // this.onReady();
   }
 
-  ngAfterViewChecked(){
+  ngAfterViewChecked() {
 
   }
 
-  openMessageDialog(message: string) {    
+  openMessageDialog(message: string) {
     this.messageDialogRef = this.dialog.open(MessageDialogComponent, {
       data: {
         message: message
@@ -204,42 +272,24 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
     });
   }
 
-  openFileDialog(file?) {
-    this.fileNameDialogRef = this.dialog.open(FileNameDialogComponent, {
-      data: {
-        filename: file ? file.name : ''
-      }
-    });
-
-    this.fileNameDialogRef.afterClosed().pipe(
-      filter(name => name)
-    ).subscribe(name => {
-      if (file) {
-        const index = this.files.findIndex(f => f.name == file.name);
-        if (index !== -1) {
-          this.files[index] = { name, content: file.content }
-        }
-      } else {
-        this.files.push({ name, content: ''});
-      }
-    });
-  }
 
   checkAndInstantiateWeb3 = () => {
     // Checking if web3 has been injected by the browser (Mist/MetaMask)
-    if (typeof window.web3 !== 'undefined'){
-      
+    if (typeof window.web3 !== 'undefined') {
+
       // trigger dialogbox to notify user that the dapp is using MetaMask or Mist
       // Use Mist/MetaMask's provider
-      //this.web3 = new Web3(window.web3.currentProvider);
-      //console.warn('Using web3 detected from external source');
-
+       this.web3 = new Web3(window.web3.currentProvider);
+       console.warn('Using web3 detected from external source');
+       this.network = 'remote';
 
       // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-      this.web3 = new Web3(
+      /*this.web3 = new Web3(
         new Web3.providers.HttpProvider('http://localhost:8545')
-      );      
+      );
       console.warn('Falling back to testrpc');
+      this.network = 'local';
+      */
     } else {
       console.warn(
         'No web3 detected, falling back to Infura Ropsten'
@@ -257,27 +307,46 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked{
 
   onReady = () => {
     // Bootstrap the SudCoin abstraction for Use.
-    this.Crowdsale.setProvider(this.web3.currentProvider);
+    // this.Crowdsale.setProvider(this.web3.currentProvider);
 
     // Get the initial account balance so it can be displayed
-    this.web3.eth.getAccounts((err, accs) => {
-      if (err != null){
-        //trigger material dialog instead
-        this.openMessageDialog('There was an error fetching your accounts. Error connecting to Blockchain.');
-      } else if ((typeof accs != undefined)){
-        this.openMessageDialog('You are not connected to an Ethereum client. Your can still browse the data, but you will not be able to perform transactions.');
-        return;
-      }
-      else {
-        this.accounts = accs;
-        this.account = this.accounts[0];
+    this.web3.eth.getAccounts(( err, accs) => {
+      if (err != null) {
+        this.err = true;
+      } else if ((typeof accs !== undefined) && accs.length === 0) {
+        this.err = true;
+      } else {
+        // console.log('ACCCSSS   ' + accs);
+        // if array use the array value with key 1 by default
+        if (this.network === 'local') {
+          this.account = accs[1];
+        } else {
+          this.account = accs;
+        }
+        // this.account = this.accounts[1]; // loading buyer address as [0] would be crowsale contract address
       }
       // This is run from window:load and ZoneJS is nto aware of it we
       // need to use _ngZone.run() so that the UI updates on promise resolution
-      //this._ngZone.run(() => {
+      this._ngZone.run(() => {
         // Initial loading of UI
         // Load balances or whatever
-      //});
+        // this.web3.eth.getBalance((bal) => this.assignEthBalance(bal));
+
+        // doublecheck if error or not conected
+        if (err) {
+          this.openMessageDialog('There was an error fetching your accounts. Error connecting to Blockchain.');
+        } else if (this.notconnected) {
+          this.openMessageDialog(
+            'You are not connected to an Ethereum client. '
+             + 'Your can still browse the data, but you will'
+             + ' not be able to perform transactions.'
+          );
+        } else {
+          console.log('connected ' + this.account);
+          this.refreshBalance();
+        }
+
+      });
     });
   }
 
