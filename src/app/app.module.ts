@@ -10,19 +10,21 @@ import {
   MatToolbarModule,
   MatInputModule,
   MatCardModule,
-  MatDividerModule
+  MatDividerModule,
+  MatSnackBarModule
 } from '@angular/material';
 
 import { AppComponent } from './app.component';
 
 import { MessageDialogComponent } from './shared-module/messagedialog/message.dialog';
 import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component';
+import { SnackBarTemplateComponent } from './shared-module/snackbar-template-component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MessageDialogComponent,
-
+    SnackBarTemplateComponent,
     AirDropDialogComponent
   ],
   imports: [
@@ -35,21 +37,22 @@ import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component
     MatInputModule,
     MatCardModule,
     MatDividerModule,
+    MatSnackBarModule,
     FormsModule,
     ReactiveFormsModule,
     BrowserAnimationsModule
   ],
   exports: [
     MatButtonModule,
-    MatCheckboxModule,
-
+    MatCheckboxModule
   ],
   providers: [
 
   ],
   entryComponents: [
     MessageDialogComponent,
-    AirDropDialogComponent
+    AirDropDialogComponent,
+    SnackBarTemplateComponent
   ],
   bootstrap: [AppComponent]
 })

@@ -1,8 +1,9 @@
 import { HostListener, Component, NgZone, OnInit, AfterViewInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { MessageDialogComponent } from './shared-module/messagedialog/message.dialog';
-
+import { MatSnackBar } from '@angular/material';
 import { AirDropDialogComponent } from './shared-module/airdrop-dialog-component';
+import { SnackBarTemplateComponent } from './shared-module/snackbar-template-component';
 import { filter } from 'rxjs/operators';
 import { AfterViewChecked } from '@angular/core/src/metadata/lifecycle_hooks';
 
@@ -37,7 +38,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
 
   // balance check pending after transaction
   // usually network is slow so need to run a timeout loop to constantly check the balance
-  balancePending:boolean = false;
+  balancePending:number = 0;
   intervalCheckId:any;
 
   // default participation amount
@@ -57,7 +58,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
 
   airDropDialogRef: MatDialogRef<AirDropDialogComponent>;
 
-  constructor(private _ngZone: NgZone, private dialog: MatDialog){
+  constructor(private _ngZone: NgZone, private dialog: MatDialog, public snackBar: MatSnackBar){
 
   }
 
@@ -104,8 +105,17 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
               + '  Block: ' + receipt.receipt.blockNumber;
               this.openMessageDialog(message);
               // flag to check balance update on UI can be slight delay due to blockchain network latency
-              this.balancePending = true;
-              this.intervalCheckId = setInterval(() => { this.refreshBalance(); console.log('checking again'); }, 1000);
+              this.balancePending = 1;
+              this.snackBar.openFromComponent(SnackBarTemplateComponent, {
+                duration: 5000,
+                data: {
+                  message: 'Please wait, you balance being updated.'
+                }
+              });
+              this.intervalCheckId = setInterval(() => { 
+                this.refreshBalance(); 
+                console.log('checking again'); 
+              }, 1000);
               // this.refreshBalance();
             }).catch((err) => {
               console.log(err.message);
@@ -174,19 +184,19 @@ assignStudentChainInstance(addr) {
  * @param STCInstance
  */
 STCBalance(STCInstance) {
-  this.getContractSTCBalance();
+  //this.getContractSTCBalance();
   // get current account STC Balance
   STCInstance.balanceOf(this.account).then(balance => {
      console.log('Balance: ' + balance.toString(10));
      console.log(this.web3.fromWei(balance,'ether') +' ==? '+ this.balance);
      // check if the balance is unchanged
-     if (this.web3.fromWei(balance,'ether') == this.balance) {
-       console.log('SAME BALANCE !!');
-       this.balancePending = true;
+     if (this.web3.fromWei(balance,'ether').toString() === this.balance.toString()) {
+       console.log('.. SAME BALANCE !!');
+       this.balancePending = 1;
      } else {
-      this.balancePending = false;
-     }
-     this.balance = this.web3.fromWei(balance, 'ether');
+      this.balancePending = 0;
+      this.balance = this.web3.fromWei(balance, 'ether');
+     }     
      return this.web3.fromWei(balance, 'ether');
    });
 }
@@ -200,14 +210,14 @@ assignEthBalance(bal, err) {
   if (bal != null) {
     // console.log(bal.plus(21).toString(10));
      // check if the balance is unchanged
-    if (this.web3.fromWei(bal,'ether') == this.ethBalance) {
-      this.balancePending = true;
+    if (this.web3.fromWei(bal,'ether') === this.ethBalance) {
+      this.balancePending = 1;
       console.log('SAME BALANCE !!');
     } else {
-      this.balancePending = false;
+      this.balancePending = 0;
+      // response is returned in BigNumber BigNumber { s: 1, e: 0, c: [ 0 ] }
+      this.ethBalance = this.web3.fromWei(bal, 'ether');      
      }
-    // response is returned in BigNumber BigNumber { s: 1, e: 0, c: [ 0 ] }
-    this.ethBalance = this.web3.fromWei(bal, 'ether');
   }
 }
 
@@ -240,9 +250,17 @@ refreshBalance = () => {
       (STCInstance) => this.STCBalance(STCInstance)
     );
 
-    if (this.balancePending === false) {
-        clearInterval(this.intervalCheckId);
+    if (this.balancePending === 0) {
+      console.log('Clearing interval cos system thinks .. balance updated .. because balance pending = '+this.balancePending);
+      this.snackBar.openFromComponent(SnackBarTemplateComponent, {
+        duration: 2000,
+        data: {
+          message: 'Your balance has been updated.'
+        }        
+      });
+      clearInterval(this.intervalCheckId);
     }
+
 }
 
   setStatus = message => {

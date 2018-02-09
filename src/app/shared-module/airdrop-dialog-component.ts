@@ -39,7 +39,7 @@ export class NumbersOnlyDirective implements OnChanges {
         </mat-form-field>
       </mat-dialog-content>
       <mat-dialog-actions>
-        <button mat-button type="submit">Send Transaction</button>
+        <button mat-raised-button  color="primary" type="submit">Buy STC</button>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
       </mat-dialog-actions>
     </form>
