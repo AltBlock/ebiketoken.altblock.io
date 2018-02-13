@@ -112,9 +112,9 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
                   message: 'Please wait, you balance being updated.'
                 }
               });
-              this.intervalCheckId = setInterval(() => { 
-                this.refreshBalance(); 
-                console.log('checking again'); 
+              this.intervalCheckId = setInterval(() => {
+                this.refreshBalance();
+                console.log('checking again');
               }, 1000);
               // this.refreshBalance();
             }).catch((err) => {
@@ -196,7 +196,7 @@ STCBalance(STCInstance) {
      } else {
       this.balancePending = 0;
       this.balance = this.web3.fromWei(balance, 'ether');
-     }     
+     }
      return this.web3.fromWei(balance, 'ether');
    });
 }
@@ -216,7 +216,7 @@ assignEthBalance(bal, err) {
     } else {
       this.balancePending = 0;
       // response is returned in BigNumber BigNumber { s: 1, e: 0, c: [ 0 ] }
-      this.ethBalance = this.web3.fromWei(bal, 'ether');      
+      this.ethBalance = this.web3.fromWei(bal, 'ether');
      }
   }
 }
@@ -256,7 +256,7 @@ refreshBalance = () => {
         duration: 2000,
         data: {
           message: 'Your balance has been updated.'
-        }        
+        }
       });
       clearInterval(this.intervalCheckId);
     }
@@ -361,7 +361,14 @@ refreshBalance = () => {
           );
         } else {
           console.log('connected ' + this.account);
-          this.refreshBalance();
+          if (typeof this.account === 'undefined') {
+            this.openMessageDialog(
+              'It seems that your are not logged in to MetaMask. '
+               + 'Please unlock your MetaMask wallet to be able to buy or transact.'
+            );
+          } else {
+            this.refreshBalance();
+          }
         }
 
       });
