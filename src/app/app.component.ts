@@ -13,8 +13,8 @@ declare var window: any;
 const Web3 = require('web3');
 const contract = require('truffle-contract');
 
-const crowdsaleArtifacts = require('../../build/contracts/StudentChainCrowdsale.json');
-const chainArtifacts = require('../../build/contracts/StudentChain.json');
+const crowdsaleArtifacts = require('../../build/contracts/YourTokenCrowdsale.json');
+const chainArtifacts = require('../../build/contracts/YourToken.json');
 
 @Component({
   selector: 'app-root',
@@ -23,10 +23,10 @@ const chainArtifacts = require('../../build/contracts/StudentChain.json');
 })
 export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
   crowsaleInstance: any;
-  studentChainInstance: any;
+  YourTokenInstance: any;
 
   Crowdsale = contract(crowdsaleArtifacts);
-  StudentChain = contract(chainArtifacts);
+  YourToken = contract(chainArtifacts);
 
   err:boolean = false;
   notconnected:boolean = false;
@@ -49,7 +49,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
   balance: number = 0;
   ethBalance: number;
   status: string;
-  contractSTCBalance: number;
+  contractYTCBalance: number;
   contractAddress: string;
   rate: string;
   totalSupply: number;
@@ -62,17 +62,12 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
 
   }
 
-  files = [
-    { name: 'foo.js', content: ''},
-    { name: 'bar.js', content: ''}
-  ];
-
   @HostListener('window:load')
   windowLoaded() {
 
-    // Bootstrap the SudCoin abstraction for Use.
+    // Bootstrap the YourToken abstraction for Use.
     this.Crowdsale.setProvider(this.web3.currentProvider);
-    this.StudentChain.setProvider(this.web3.currentProvider);
+    this.YourToken.setProvider(this.web3.currentProvider);
 
     this.onReady();
   }
@@ -112,13 +107,12 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
                   message: 'Please wait, you balance being updated.'
                 }
               });
+              // trigger a Interval check to update the balance from blockchain every 1 sec
               this.intervalCheckId = setInterval(() => {
                 this.refreshBalance();
-                console.log('checking again');
               }, 1000);
-              // this.refreshBalance();
             }).catch((err) => {
-              console.log(err.message);
+              // trigger dialog to display error
               this.notifyError(err.message);
             });
           }
@@ -128,7 +122,7 @@ export class AppComponent implements OnInit, AfterViewInit, AfterViewChecked {
   }
 
 /**
- * Assign Contract Address for STC
+ * Assign Contract Address for YTC
  * @param addr
  */
 assignContractAddress(addr) {
@@ -140,53 +134,47 @@ assignSupply(supply) {
   this.totalSupply = supply;
 }
 /**
- * Get contract STC Balance
+ * Get contract YTC Balance
  */
-getContractSTCBalance() {
-  // this.studentChainInstance = this.StudentChain.at(this.contractAddress);
-  // this.contractSTCBalance = this.studentChainInstance.balanceOf(this.contractAddress).then(balance => balance.toString(10));
-
-   const studentChainInstance = this.StudentChain.at(this.contractAddress);
-   studentChainInstance.balanceOf(this.account).then(balance => {
+getContractYTCBalance() {
+   const YourTokenInstance = this.YourToken.at(this.contractAddress);
+   YourTokenInstance.balanceOf(this.account).then(balance => {
     console.log('Balance: ' + balance.toString(10));
-    this.contractSTCBalance = balance;
+    this.contractYTCBalance = balance;
     return balance.toString(10);
    });
-
-   studentChainInstance.totalSupply().then((supply) => this.assignSupply(supply));
-
+   YourTokenInstance.totalSupply().then((supply) => this.assignSupply(supply));
 }
 
 /**
- * Assign Crowsale contract Instance for STC
+ * Assign Crowsale contract Instance for YTC
  * @param instance
  */
 assignCrowSaleInstance(instance:any) {
     this.crowsaleInstance = instance;
     console.log(instance);
-    // StudentChainCrowdsale.deployed().then(inst => inst.sendTransaction({ from: account1, value: web3.toWei(5, "ether")}))
+    // YourTokenCrowdsale.deployed().then(inst => inst.sendTransaction({ from: account1, value: web3.toWei(5, "ether")}))
    return instance.token().then(
       (addr) => this.assignContractAddress(addr)
    );
 }
 
 /**
- * Assign StudentChain Token Wallet Instance
+ * Assign YourToken Token Wallet Instance
  * @param addr
  */
-assignStudentChainInstance(addr) {
-    this.studentChainInstance = this.StudentChain.at(addr);
-    return this.studentChainInstance;
+assignYourTokenInstance(addr) {
+    this.YourTokenInstance = this.YourToken.at(addr);
+    return this.YourTokenInstance;
 }
 
 /**
- * Get STC Balance of current wallet
- * @param STCInstance
+ * Get YTC Balance of current wallet
+ * @param YTCInstance
  */
-STCBalance(STCInstance) {
-  //this.getContractSTCBalance();
-  // get current account STC Balance
-  STCInstance.balanceOf(this.account).then(balance => {
+YTCBalance(YTCInstance) {
+  // get current account YTC Balance
+  YTCInstance.balanceOf(this.account).then(balance => {
      console.log('Balance: ' + balance.toString(10));
      console.log(this.web3.fromWei(balance,'ether') +' ==? '+ this.balance);
      // check if the balance is unchanged
@@ -208,11 +196,9 @@ STCBalance(STCInstance) {
  */
 assignEthBalance(bal, err) {
   if (bal != null) {
-    // console.log(bal.plus(21).toString(10));
      // check if the balance is unchanged
     if (this.web3.fromWei(bal,'ether') === this.ethBalance) {
       this.balancePending = 1;
-      console.log('SAME BALANCE !!');
     } else {
       this.balancePending = 0;
       // response is returned in BigNumber BigNumber { s: 1, e: 0, c: [ 0 ] }
@@ -235,9 +221,7 @@ getEthBalance(address) {
  *
  */
 refreshBalance = () => {
-
     console.log('refreshing balance');
-
     // getting buyers ether balance
     this.getEthBalance(this.account);
 
@@ -245,9 +229,9 @@ refreshBalance = () => {
     this.Crowdsale.deployed().then(
       (instance) => this.assignCrowSaleInstance(instance)
     ).then(
-      (addr) => this.assignStudentChainInstance(addr)
+      (addr) => this.assignYourTokenInstance(addr)
     ).then(
-      (STCInstance) => this.STCBalance(STCInstance)
+      (YTCInstance) => this.YTCBalance(YTCInstance)
     );
 
     if (this.balancePending === 0) {
@@ -268,14 +252,11 @@ refreshBalance = () => {
   }
 
   ngOnInit() {
-    // this.checkAndInstantiateWeb3();
-    // this.onReady();
     console.log('window init');
   }
 
   ngAfterViewInit() {
     this.checkAndInstantiateWeb3();
-    // this.onReady();
   }
 
   ngAfterViewChecked() {
@@ -301,13 +282,16 @@ refreshBalance = () => {
        console.warn('Using web3 detected from external source');
        this.network = 'remote';
 
-      // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-      /*this.web3 = new Web3(
+      // enable following if developing without metamask or to connect to
+      // testrpc blockchain testnet
+      /*
+      this.web3 = new Web3(
         new Web3.providers.HttpProvider('http://localhost:8545')
       );
       console.warn('Falling back to testrpc');
       this.network = 'local';
       */
+
     } else {
       console.warn(
         'No web3 detected, falling back to Infura Ropsten'
@@ -324,8 +308,6 @@ refreshBalance = () => {
   }
 
   onReady = () => {
-    // Bootstrap the SudCoin abstraction for Use.
-    // this.Crowdsale.setProvider(this.web3.currentProvider);
 
     // Get the initial account balance so it can be displayed
     this.web3.eth.getAccounts(( err, accs) => {
@@ -334,14 +316,13 @@ refreshBalance = () => {
       } else if ((typeof accs !== undefined) && accs.length === 0) {
         this.err = true;
       } else {
-        // console.log('ACCCSSS   ' + accs);
+
         // if array use the array value with key 1 by default
         if (this.network === 'local') {
           this.account = accs[1];
         } else {
           this.account = accs;
         }
-        // this.account = this.accounts[1]; // loading buyer address as [0] would be crowsale contract address
       }
       // This is run from window:load and ZoneJS is nto aware of it we
       // need to use _ngZone.run() so that the UI updates on promise resolution

@@ -1,5 +1,5 @@
 <mat-toolbar color="primary">
-   StudentChain
+   Your Token
 </mat-toolbar>
   <div class="basic-container">
       <div layout-fill *ngIf="status" layout="column" layout-align="center none">
@@ -11,30 +11,16 @@
       </div>
       <mat-card>
         <mat-card-title>
-          Your STC Token
+          Your YTC Token (Your Token)
         </mat-card-title>
         <mat-card-content>
             Your ETH Balance = {{ ethBalance }} ETH<br/>
-            Your STC Balance = {{ balance }} <br/>
+            Your YTC Balance = {{ balance }} <br/>
             Your Eth Address = {{ account }}<br/>
         </mat-card-content>
+        <div class="button-row">
+          <button mat-raised-button color="primary"  (click)="airDropToken()">Buy YTC Token</button>
+        </div>
       </mat-card>
-      <mat-card>
-        <mat-card-title>
-          STC Contract
-        </mat-card-title>
-        <mat-card-content>
-            Contract Address = {{ contractAddress }}<br/>
-            STC token = {{ contractSTCBalance }} <br/>
-            Rate = {{ rate }}
-            Total Supply = {{ totalSupply }}
-        </mat-card-content>
-        <br/>
-      </mat-card>
-      <div class="button-row">
-        <button mat-raised-button color="primary"  (click)="airDropToken()">Buy STC Token</button>
-      </div>
       <mat-divider></mat-divider>
-
-
   </div>
