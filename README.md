@@ -14,10 +14,10 @@ Prerequisites
 - angular-cli
 
 Install
-- Clone Repos
-- npm install
-- Run Ethereum testnet 
-- Compile and migrate Token and Contract Artifact to testnet 
-- ng serve 
+- Clone this repo 
+- npm install (this will install app dependencies)
+- Run Ethereum testnet (Ethereum local blockchain testnet)
+- Compile and migrate Token and Contract Artifact to testnet using truffle cli command 
+- ng serve to compile and serve an angular App
 
 Now browse http://localhost:4200/ 
