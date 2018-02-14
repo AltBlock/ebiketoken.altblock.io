@@ -13,10 +13,11 @@ Prerequisites
 - nodejs
 - angular-cli
 
-1 Clone Repos
-2 npm install
-3 Run Ethereum testnet 
-4 Compile and migrate Token and Contract Artifact to testnet 
-5 ng serve 
+Install
+- Clone Repos
+- npm install
+- Run Ethereum testnet 
+- Compile and migrate Token and Contract Artifact to testnet 
+- ng serve 
 
 Now browse http://localhost:4200/ 
