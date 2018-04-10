@@ -1,5 +1,5 @@
-var Migrations = artifacts.require("./Migrations.sol");
+var EbikeToken = artifacts.require("./ebiketoken.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(Migrations);
+  deployer.deploy(EbikeToken);
 };
