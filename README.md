@@ -1,23 +1,5 @@
-An Angular Skeleton DApp with Google Material Design UI and Truffle framework.
+eBike erc20 Token Sale / Distribution - later to be on NEO Blockchain
 
-Default feature
+Feature
+- Sale participants can sign up for KYC and send ETH as contribution.
 
-- Creates an ERC20 Token on Ethereum Blockchain Testnet using Testrpc
-- Creates crowsale contract where users can participate and buy token using Ethereum Balance they hold on MetaMask.
-
-Installation
-
-Prerequisites
-- Ethereum Testnet testrpc 
-- npm 
-- nodejs
-- angular-cli
-
-Install
-- Clone this repo 
-- npm install (this will install app dependencies)
-- Run Ethereum testnet (Ethereum local blockchain testnet)
-- Compile and migrate Token and Contract Artifact to testnet using truffle cli command 
-- ng serve to compile and serve an angular App
-
-Now browse http://localhost:4200/ 
