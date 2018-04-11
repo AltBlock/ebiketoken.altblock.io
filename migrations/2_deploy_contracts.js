@@ -1,10 +1,24 @@
-const YourTokenCrowdsale = artifacts.require("./YourTokenCrowdsale.sol")
+const EbiketokenCrowdsale = artifacts.require('./ebiketokenCrowdsale.sol');
+const Ebiketoken = artifacts.require('./Ebiketoken.sol');
 
 module.exports = function(deployer, network, accounts) {
-  const startTime = web3.eth.getBlock(web3.eth.blockNumber).timestamp + 1 // one second in the future
-  const endTime = startTime + (86400 * 20) // 20 days
-  const rate = new web3.BigNumber(1000)
-  const wallet = accounts[0]
+    const openingTime = web3.eth.getBlock('latest').timestamp + 2; // two secs in the future
+    const closingTime = openingTime + 86400 * 20; // 20 days
+    const rate = new web3.BigNumber(1000);
+    const wallet = accounts[1];
 
-  deployer.deploy(YourTokenCrowdsale, startTime, endTime, rate, wallet)
+    return deployer
+        .then(() => {
+            return deployer.deploy(Ebiketoken);
+        })
+        .then(() => {
+            return deployer.deploy(
+                EbiketokenCrowdsale,
+                openingTime,
+                closingTime,
+                rate,
+                wallet,
+                Ebiketoken.address
+            );
+        });
 };
