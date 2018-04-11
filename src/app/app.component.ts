@@ -13,8 +13,8 @@ declare var window: any;
 const Web3 = require('web3');
 const contract = require('truffle-contract');
 
-const crowdsaleArtifacts = require('../../build/contracts/YourTokenCrowdsale.json');
-const chainArtifacts = require('../../build/contracts/YourToken.json');
+const crowdsaleArtifacts = require('../../build/contracts/ebiketokenCrowdsale.json');
+const chainArtifacts = require('../../build/contracts/EbikeToken.json');
 
 @Component({
   selector: 'app-root',
